@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Klondike Solitaire — AGEK1D</title>
     <style>
         body {
@@ -12,6 +13,7 @@
             margin: 0;
             padding: 20px;
             user-select: none;
+            -webkit-user-select: none;
             overflow-x: hidden;
             min-height: 100vh;
             box-sizing: border-box;
@@ -92,19 +94,19 @@
             max-width: 720px;
             margin: 0 auto;
             flex: 1;
-            padding-bottom: 180px;
+            padding-bottom: 190px;
         }
 
         .top-row,
         .tableau-row {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(7, minmax(0, 1fr));
             gap: 12px;
             margin-bottom: 30px;
         }
 
         .slot {
-            width: 85px;
+            width: 100%;
             height: 120px;
             border: 2px dashed rgba(255, 255, 255, 0.35);
             border-radius: 8px;
@@ -122,7 +124,7 @@
         }
 
         .card {
-            width: 85px;
+            width: calc(100% + 4px);
             height: 120px;
             border-radius: 8px;
             background: #fff;
@@ -242,6 +244,82 @@
             height: 16px;
             fill: currentColor;
         }
+
+        /* Адаптация под смартфоны */
+        @media (max-width: 740px) {
+            body {
+                padding: 12px 6px;
+            }
+
+            .header {
+                justify-content: center;
+                text-align: center;
+                margin-bottom: 14px;
+                gap: 8px;
+            }
+
+            #titleText {
+                font-size: 14px;
+                width: 100%;
+            }
+
+            .controls {
+                justify-content: center;
+                width: 100%;
+                gap: 6px;
+            }
+
+            .action-btn {
+                padding: 7px 11px;
+                font-size: 13px;
+            }
+
+            .lang-btn {
+                padding: 5px 8px;
+                font-size: 12px;
+            }
+
+            .top-row,
+            .tableau-row {
+                gap: 4px;
+                margin-bottom: 16px;
+            }
+
+            .slot {
+                height: 18.5vw;
+                border-radius: 5px;
+                border-width: 1.5px;
+                font-size: 18px;
+            }
+
+            .card {
+                width: calc(100% + 3px);
+                height: 18.5vw;
+                left: -1.5px;
+                top: -1.5px;
+                padding: 3px;
+                border-radius: 5px;
+                font-size: 11px;
+            }
+
+            .suit-big {
+                font-size: 15px;
+            }
+
+            .card-brand {
+                font-size: 5.5px;
+                letter-spacing: 0.3px;
+            }
+
+            .board {
+                padding-bottom: 140px;
+            }
+
+            .x-btn {
+                padding: 9px 18px;
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 
@@ -279,7 +357,7 @@
     </div>
 
     <footer class="footer">
-        <a class="x-btn" href="https://x.com/Agek1d" target="_blank" rel="noopener noreferrer">
+        <a class="x-btn" href="https://x.com" target="_blank" rel="noopener noreferrer">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                     d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z">
@@ -295,7 +373,7 @@
         const i18n = {
             en: {
                 pageTitle: 'Klondike Solitaire — AGEK1D',
-                header: '<strong>Klondike Solitaire</strong> — drag cards with mouse',
+                header: '<strong>Klondike Solitaire</strong> — drag or tap cards',
                 undo: '↶ Undo',
                 newGame: 'New Game',
                 win: 'Congratulations! You won! 🎉',
@@ -303,7 +381,7 @@
             },
             uk: {
                 pageTitle: 'Пасьянс Косинка — AGEK1D',
-                header: '<strong>Пасьянс «Косинка»</strong> — перетягуйте карти мишею',
+                header: '<strong>Пасьянс «Косинка»</strong> — перетягуйте або натискайте карти',
                 undo: '↶ Скасувати хід',
                 newGame: 'Нова гра',
                 win: 'Вітаємо! Ви склали пасьянс! 🎉',
@@ -311,7 +389,7 @@
             },
             ru: {
                 pageTitle: 'Пасьянс Косынка — AGEK1D',
-                header: '<strong>Пасьянс «Косынка»</strong> — перетаскивайте карты мышью',
+                header: '<strong>Пасьянс «Косынка»</strong> — перетаскивайте или нажимайте карты',
                 undo: '↶ Отменить ход',
                 newGame: 'Новая игра',
                 win: 'Поздравляем! Вы собрали пасьянс! 🎉',
@@ -336,6 +414,14 @@
         let history = [];
         let selected = null;
         let dragState = null;
+
+        function isMobileScreen() {
+            return window.innerWidth <= 740;
+        }
+
+        function getStepOffsets() {
+            return isMobileScreen() ? {up: 18, down: 8} : {up: 26, down: 12};
+        }
 
         function setLang(lang) {
             if (!i18n[lang]) lang = 'en';
@@ -519,6 +605,8 @@
                 startY: e.clientY,
                 offsetX: e.clientX - rect.left,
                 offsetY: e.clientY - rect.top,
+                cardW: rect.width,
+                cardH: rect.height,
                 isDragging: false,
                 domCards
             };
@@ -538,11 +626,14 @@
 
                 const pile = getPile(dragState.source, dragState.pileIdx);
                 const movingCards = pile.slice(dragState.cardIdx);
+                const step = getStepOffsets().up;
 
                 movingCards.forEach((c, idx) => {
                     const clone = buildCardHTML(c);
+                    clone.style.width = dragState.cardW + 'px';
+                    clone.style.height = dragState.cardH + 'px';
                     clone.style.left = '0px';
-                    clone.style.top = (idx * 26) + 'px';
+                    clone.style.top = (idx * step) + 'px';
                     clone.style.boxShadow = '0 10px 20px rgba(0,0,0,0.45)';
                     dragLayer.appendChild(clone);
                 });
@@ -670,6 +761,8 @@
 
             const tabContainer = document.getElementById('tableau');
             tabContainer.innerHTML = '';
+            const steps = getStepOffsets();
+
             for (let i = 0; i < 7; i++) {
                 const slot = document.createElement('div');
                 slot.className = 'slot';
@@ -680,11 +773,13 @@
                 let offset = 0;
                 tableau[i].forEach((card, cIdx) => {
                     slot.appendChild(createCardEl(card, 'tableau', i, cIdx, offset));
-                    offset += card.faceUp ? 26 : 12;
+                    offset += card.faceUp ? steps.up : steps.down;
                 });
                 tabContainer.appendChild(slot);
             }
         }
+
+        window.addEventListener('resize', () => render());
 
         loadInitialLang();
         initGame();
